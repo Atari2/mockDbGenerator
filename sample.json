@@ -1,0 +1,53 @@
+{
+  "tables": [
+    {
+      "name": "Gruppi",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "generation": "random",
+          "length": "10"
+        }
+      ],
+      "rows": 100,
+      "primary_keys": ["id"]
+    },
+    {
+      "name": "Studenti",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "integer",
+          "generation": "increasing",
+          "start": "0"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "generation": "random",
+          "length": "10"
+        },
+        {
+          "name": "birth",
+          "type": "date",
+          "generation": "increasing",
+          "start": "1990-01-01",
+          "step": {
+            "weeks": "4"
+          }
+        },
+        {
+          "name": "fk_studenti",
+          "type": "foreign_key",
+          "references": {
+            "table": "Gruppi",
+            "attribute": "id"
+          }
+        }
+      ],
+      "primary_keys": ["id"],
+      "rows": 100
+    }
+  ]
+}
