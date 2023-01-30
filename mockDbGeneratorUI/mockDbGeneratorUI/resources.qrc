@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/mockDbGeneratorUI.ico</file>
+        <file>resources/dataGenerators/__init__.py</file>
+        <file>resources/dataGenerators/generators.py</file>
+        <file>resources/structureReader/__init__.py</file>
+        <file>resources/structureReader/reader.py</file>
+        <file>resources/typeWrappers/__init__.py</file>
+        <file>resources/typeWrappers/types.py</file>
+        <file>resources/mockDbGenerator.py</file>
+    </qresource>
+</RCC>

@@ -37,7 +37,7 @@ Each attribute object can also have the following optional properties:
 4 types can currently be generated:
 * `string` - A string of random alphanumeric characters
 * `integer` - An integer
-* `float` - A float
+* `real` - A float
 * `date` - A timestamp without timezone
 
 Additionally, an attribute can also be indicated of type `foreign_key` which will generate a foreign key to another table. `foreign_key` attributes must have a property called `references` which is an object with the following properties:

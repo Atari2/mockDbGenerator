@@ -1,0 +1,6 @@
+mockDbGeneratorUI/build-*
+CMakeLists.txt.*
+mockDbGeneratorUI/mockDbGeneratorUI/resources/dataGenerators
+mockDbGeneratorUI/mockDbGeneratorUI/resources/structureReader
+mockDbGeneratorUI/mockDbGeneratorUI/resources/typeWrappers
+mockDbGeneratorUI/mockDbGeneratorUI/resources/mockDbGenerator.py
