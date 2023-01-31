@@ -23,7 +23,7 @@ jobs:
         7z x -oQt6Static Qt6Static.7z -y
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC_QT_DIR=${{github.workspace}}/Qt6Static
+      run: cmake -S ${{github.workspace}}/mockDbGeneratorUI/mockDbGeneratorUI -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC_QT_DIR=${{github.workspace}}/Qt6Static
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
