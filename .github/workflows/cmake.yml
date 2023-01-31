@@ -16,12 +16,13 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Download Qt static libraries
+    - name: Setup vcpkg, zlib, qt and resource files
       shell: pwsh
       run: |
         vcpkg install zlib:x64-windows zlib:x64-windows-static
         Invoke-WebRequest -Uri www.atarismwc.com/Qt6Static.7z -OutFile Qt6Static.7z
         7z x -oQt6Static Qt6Static.7z -y
+        .\copy_python_files.ps1
 
     - name: Configure CMake
       env:
