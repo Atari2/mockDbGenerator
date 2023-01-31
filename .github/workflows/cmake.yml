@@ -25,7 +25,7 @@ jobs:
 
     - name: Configure CMake
       env:
-        CMAKE_TOOLCHAIN_FILE: ${{env.VCPKG_INSTALLATION_ROOT}}/scripts/buildsystems/vcpkg.cmake
+        CMAKE_TOOLCHAIN_FILE: C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
       run: cmake -S ${{github.workspace}}/mockDbGeneratorUI/mockDbGeneratorUI -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC_QT_DIR=${{github.workspace}}/Qt6Static
 
     - name: Build
