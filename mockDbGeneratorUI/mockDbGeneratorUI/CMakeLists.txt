@@ -26,7 +26,11 @@ foreach(POSSIBLE_STRING ${POSSIBLE_RELEASE_STRINGS})
     endif()
 endforeach()
 
-set(STATIC_QT_DIR "C:/Qt6Static")
+if (NOT DEFINED ENV{GITHUB_ACTION})
+    set(STATIC_QT_DIR "C:/Qt6Static")
+else()
+    message(STATUS "In github actions, static qt dir = ${STATIC_QT_DIR}")
+endif()
 
 if (NOT STATIC_QT_DIR AND RELEASE_BUILD)
     message(FATAL_ERROR "RELEASE_BUILD was specified but STATIC_QT_DIR was not passed")
