@@ -19,10 +19,13 @@ jobs:
     - name: Download Qt static libraries
       shell: pwsh
       run: |
+        vcpkg install zlib:x64-windows zlib:x64-windows-static
         Invoke-WebRequest -Uri www.atarismwc.com/Qt6Static.7z -OutFile Qt6Static.7z
         7z x -oQt6Static Qt6Static.7z -y
 
     - name: Configure CMake
+      env:
+        CMAKE_TOOLCHAIN_FILE: ${{env.VCPKG_INSTALLATION_ROOT}}/scripts/buildsystems/vcpkg.cmake
       run: cmake -S ${{github.workspace}}/mockDbGeneratorUI/mockDbGeneratorUI -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC_QT_DIR=${{github.workspace}}/Qt6Static
 
     - name: Build
