@@ -4,3 +4,6 @@ mockDbGeneratorUI/mockDbGeneratorUI/resources/dataGenerators
 mockDbGeneratorUI/mockDbGeneratorUI/resources/structureReader
 mockDbGeneratorUI/mockDbGeneratorUI/resources/typeWrappers
 mockDbGeneratorUI/mockDbGeneratorUI/resources/mockDbGenerator.py
+dataGenerators/__pycache__
+structureReader/__pycache__
+typeWrappers/__pycache__
