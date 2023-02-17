@@ -55,7 +55,7 @@ jobs:
         path: ${{github.workspace}}/build/Release/mockDbGeneratorUI.exe
 
     - name: Zip
-      run: 7z a -tzip mockDbGeneratorUI.zip ${{github.workspace}}/build/Release/mockDbGeneratorUI.exe LICENSE README.md DOCUMENTATION.md
+      run: 7z a -tzip mockDbGenerator.zip ${{github.workspace}}/build/Release/mockDbGeneratorUI.exe LICENSE README.md DOCUMENTATION.md
       if: startsWith(github.ref, 'refs/tags')
 
     - name: Release
