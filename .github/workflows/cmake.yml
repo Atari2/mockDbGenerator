@@ -20,13 +20,25 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Setup vcpkg, zlib, qt and resource files
+    - name: Setup zlib and resource files
       shell: pwsh
       run: |
         vcpkg install zlib:x64-windows zlib:x64-windows-static
+        .\copy_python_files.ps1
+
+    - name: Cache qt static build
+      id: cache-qt-static-build
+      uses: actions/cache@v3
+      with:
+        path: Qt6Static
+        key: ${{ runner.os }}-Qt6Static
+
+    - name: Download and unzip qt static build
+      shell: pwsh
+      if: steps.cache-qt-static-build.outputs.cache-hit != 'true'
+      run: |
         Invoke-WebRequest -Uri www.atarismwc.com/Qt6Static.7z -OutFile Qt6Static.7z
         7z x -oQt6Static Qt6Static.7z -y
-        .\copy_python_files.ps1
 
     - name: Configure CMake
       env:
