@@ -1,4 +1,9 @@
 {
     "python.analysis.typeCheckingMode": "basic",
     "python.formatting.provider": "black",
+    "cmake.sourceDirectory": "${workspaceFolder}/mockDbGeneratorUI/mockDbGeneratorUI",
+    "cmake.configureArgs": [
+        "-DCMAKE_PREFIX_PATH=C:/Qt6Static"
+    ],
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

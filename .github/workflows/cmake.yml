@@ -26,7 +26,7 @@ jobs:
 
     - name: Configure CMake
       env:
-        CMAKE_TOOLCHAIN_FILE: C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        CMAKE_TOOLCHAIN_FILE: C:/vcpkg/scripts/buildsystems/vcpkg.cmake
       run: cmake -S ${{github.workspace}}/mockDbGeneratorUI/mockDbGeneratorUI -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSTATIC_QT_DIR=${{github.workspace}}/Qt6Static
 
     - name: Build
@@ -37,3 +37,15 @@ jobs:
       with:
         name: mockDbGeneratorUI
         path: ${{github.workspace}}/build/Release/mockDbGeneratorUI.exe
+
+    - name: Zip
+      run: 7z a -tzip mockDbGeneratorUI.zip ${{github.workspace}}/build/Release/mockDbGeneratorUI.exe LICENSE README.md DOCUMENTATION.md
+      if: startsWith(github.ref, 'refs/tags')
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags')
+      with:
+        generate_release_notes: true
+        prerelease: true
+        files: mockDbGenerator.zip
