@@ -68,7 +68,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     target_compile_definitions(mockDbGeneratorUI PRIVATE QT_NO_DEBUG_OUTPUT)
 endif()
 
-if (WIN32)
+if (WIN32 AND NOT STATIC_BUILD)
     get_target_property(_qmake_executable Qt6::qmake IMPORTED_LOCATION)
     get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
     find_program(WINDEPLOYQT_EXE windeployqt HINTS "${_qt_bin_dir}")
