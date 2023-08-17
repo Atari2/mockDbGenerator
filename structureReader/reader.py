@@ -217,7 +217,7 @@ class DbTable:
         for attribute in self._attributes.values():
             sql += f"\t{attribute.sql_string()}, \n"
         sql += f'\tCONSTRAINT pk_{self._name} PRIMARY KEY ({", ".join(map(lambda x: x._name, self._keys))})\n);\n'
-        f.write(sql)
+        f.write(sql) # type: ignore
 
     def generate_insertion_sql(self, f: TextIOWrapper):
         for i in range(self._quantity):

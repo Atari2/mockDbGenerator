@@ -79,15 +79,18 @@ MainWindow::MainWindow(QWidget *parent)
     QPushButton* btn2 = new QPushButton{dumpWidget};
     QPushButton* btn3 = new QPushButton{dumpWidget};
     QPushButton* btn4 = new QPushButton{dumpWidget};
+    QPushButton* btn5 = new QPushButton{dumpWidget};
     btn1->setText("Add table");
     btn2->setText("Dump to json");
     btn3->setText("Generate data (csv)");
     btn4->setText("Generate data (sql)");
+    btn5->setText("Import from JSON");
     dumpLayout->addWidget(m_schema_name);
     dumpLayout->addWidget(btn1);
     dumpLayout->addWidget(btn2);
     dumpLayout->addWidget(btn3);
     dumpLayout->addWidget(btn4);
+    dumpLayout->addWidget(btn5);
     QObject::connect(btn1, &QPushButton::clicked, this, [this](int){
         add_table();
     });
@@ -99,6 +102,9 @@ MainWindow::MainWindow(QWidget *parent)
     });
     QObject::connect(btn4, &QPushButton::clicked, this, [this](int){
         generate_sql();
+    });
+    QObject::connect(btn5, &QPushButton::clicked, this, [this](int){
+        import_json();
     });
     layout->addWidget(dumpWidget);
 }
@@ -153,6 +159,32 @@ void MainWindow::generate_sql() {
         qDebug() << "Process failed";
     }
     QMessageBox::information(this, "Command result", proc.readAllStandardOutput());
+}
+void MainWindow::import_json() {
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"),
+                                                    QDir::currentPath(),
+                                                    tr("JSON (*.json)"));
+    if (fileName.size() == 0) {
+        return;
+    }
+    auto schemaname = QFileInfo{fileName}.baseName();
+    m_schema_name->setText(schemaname);
+    QFile file{fileName};
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+    auto str = file.readAll();
+    auto schema = QJsonDocument::fromJson(str);
+    const auto& tablesArray = schema["tables"];
+    if (!tablesArray.isArray()) {
+        return;
+    }
+    const auto& tablesArrayRef = tablesArray.toArray();
+    for (const auto& tbl : tablesArrayRef) {
+        parse_json_table(tbl);
+    }
+}
+
+void MainWindow::parse_json_table(const QJsonValue& tbl) {
+
 }
 
 MainWindow::~MainWindow()

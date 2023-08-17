@@ -45,7 +45,7 @@ Additionally, an attribute can also be indicated of type `foreign_key` which wil
 * `attribute` - The name of the attribute to reference
 
 The following generation types can be used:
-* `random` - A random value is generated for each row (this is the default and it valid for all types)
+* `random` - A random value is generated for each row (this is the default and it is valid for all types)
 * `increment` - The value is incremented by the step value for each row (this is not valid for string types)
 * `decrement` - The value is decremented by the step value for each row (this is not valid for string types)
 * `repeating` - The values are generated and then repeated every `step` times (this is not valid for date types)

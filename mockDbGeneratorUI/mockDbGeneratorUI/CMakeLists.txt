@@ -19,7 +19,7 @@ list(
 
 set(RELEASE_BUILD false)
 foreach(POSSIBLE_STRING ${POSSIBLE_RELEASE_STRINGS})
-    if (CMAKE_BUILD_TYPE STREQUAL ${POSSIBLE_STRING} OR CMAKE_CONFIGURATION_TYPES STREQUAL ${POSSIBLE_STRING})
+    if (CMAKE_BUILD_TYPE STREQUAL ${POSSIBLE_STRING})
         message(STATUS "Matched with ${POSSIBLE_STRING}")
         set(RELEASE_BUILD true)
         break()
@@ -66,6 +66,24 @@ endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     target_compile_definitions(mockDbGeneratorUI PRIVATE QT_NO_DEBUG_OUTPUT)
+endif()
+
+if (WIN32)
+    get_target_property(_qmake_executable Qt6::qmake IMPORTED_LOCATION)
+    get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
+    find_program(WINDEPLOYQT_EXE windeployqt HINTS "${_qt_bin_dir}")
+    if (RELEASE_BUILD)
+        message(STATUS "Building release windeploy")
+        add_custom_command(TARGET mockDbGeneratorUI POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E
+                env PATH="${_qt_bin_dir}" "${WINDEPLOYQT_EXE}"
+                    --release
+                    --no-compiler-runtime
+                    --no-translations
+                    "$<TARGET_FILE:mockDbGeneratorUI>"
+            COMMENT "Running windeployqt..."
+        )
+    endif()
 endif()
 
 target_link_libraries(mockDbGeneratorUI PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)

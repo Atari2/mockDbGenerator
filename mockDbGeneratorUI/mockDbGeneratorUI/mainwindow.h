@@ -19,6 +19,8 @@ public:
     void dump_to_json();
     void generate_sql();
     void generate_csv();
+    void import_json();
+    void parse_json_table(const QJsonValue& obj);
 private:
     Ui::MainWindow *ui;
     QVector<MockTable*> tables;
