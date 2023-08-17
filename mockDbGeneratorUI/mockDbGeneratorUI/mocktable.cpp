@@ -82,9 +82,9 @@ MockTable::MockTable(QWidget *parent)
     }
     tblAttrNamesWidget->setVisible(false);
     QLabel* label1 = new QLabel{"Table name:", tblAttrWidget};
-    QLineEdit* nameWidget = new QLineEdit{"table_name", tblAttrWidget};
+    nameWidget = new QLineEdit{"table_name", tblAttrWidget};
     QLabel* label2 = new QLabel{"Row count:", tblAttrWidget};
-    QLineEdit* rowsWidget = new QLineEdit{"100", tblAttrWidget};
+    rowsWidget = new QLineEdit{"100", tblAttrWidget};
     QPushButton* addAttributeButton = new QPushButton{"Add attribute", tblAttrWidget};
     deleteBtn = new QPushButton{"Delete table", parent};
     rowsWidget->setValidator(new QIntValidator{0, 10'000'000, rowsWidget});
@@ -100,16 +100,16 @@ MockTable::MockTable(QWidget *parent)
         }
         this->add_attribute();
     });
-    QObject::connect(nameWidget, &QLineEdit::editingFinished, this, [this, nameWidget](){
+    QObject::connect(nameWidget, &QLineEdit::editingFinished, this, [this](){
         name = nameWidget->text();
     });
-    QObject::connect(rowsWidget, &QLineEdit::editingFinished, this, [this, rowsWidget]() {
+    QObject::connect(rowsWidget, &QLineEdit::editingFinished, this, [this]() {
         rows = rowsWidget->text().toInt();
     });
     layout()->addWidget(tblAttrWidget);
     layout()->addWidget(tblAttrNamesWidget);
 }
-void MockTable::add_attribute() {
+MockAttribute* MockTable::add_attribute() {
     QGridLayout* gl = static_cast<QGridLayout*>(tblAttrNamesWidget->layout());
     auto sz = static_cast<int>(attributes.size());
     qDebug() << "Adding attribute number " << sz << ", current rows " << gl->rowCount();
@@ -138,6 +138,7 @@ void MockTable::add_attribute() {
             tblAttrNamesWidget->setVisible(false);
         }
     });
+    return wd;
 }
 QJsonObject MockTable::to_json() const {
     QJsonObject obj{};

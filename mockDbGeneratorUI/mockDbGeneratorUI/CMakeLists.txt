@@ -64,7 +64,7 @@ else()
     message(FATAL_ERROR "Needs QT 6 at least")
 endif()
 
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
+if (RELEASE_BUILD)
     target_compile_definitions(mockDbGeneratorUI PRIVATE QT_NO_DEBUG_OUTPUT)
 endif()
 

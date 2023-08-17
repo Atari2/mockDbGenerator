@@ -230,7 +230,7 @@ MockAttribute::MockAttribute(QString attr_name, int row, QGridLayout* hl, QWidge
     step_date = new QWidget{step_container};
     QGridLayout* dateStepLayout = new QGridLayout;
     step_date->setLayout(dateStepLayout);
-    std::array<QString, 6> dateStepProps{"microseconds", "milliseconds", "minutes", "hours", "days", "weeks"};
+    std::array<QString, 7> dateStepProps{"microseconds", "milliseconds", "seconds", "minutes", "hours", "days", "weeks"};
     int row_inner = 0;
     for (const QString& prop : dateStepProps) {
         QLabel* label = new QLabel{step_date};
@@ -271,7 +271,7 @@ MockAttribute::MockAttribute(QString attr_name, int row, QGridLayout* hl, QWidge
 }
 
 QJsonObject MockAttribute::to_json() const {
-    std::array<QString, 6> dateStepProps{ "microseconds", "milliseconds", "minutes", "hours", "days", "weeks"};
+    std::array<QString, 7> dateStepProps{ "microseconds", "milliseconds", "seconds", "minutes", "hours", "days", "weeks"};
     QJsonObject obj{};
     obj.insert("name", m_name);
     if (m_key_type == KeyType::ForeignKey) {
@@ -306,4 +306,38 @@ QJsonObject MockAttribute::to_json() const {
         obj.insert("length", length->text());
     }
     return obj;
+}
+
+void MockAttribute::setGenType(GenerationType type) {
+    gbox->setCurrentIndex(correct_gbox_index(type, m_attr_type));
+}
+void MockAttribute::setStart(const QString& start) {
+    if (m_attr_type == AttributeType::Date) {
+        start_date->setDate(QDate::fromString(start, Qt::DateFormat::ISODate));
+    } else {
+        this->start->setText(start);
+    }
+}
+void MockAttribute::setStep(const QJsonValue& step) {
+    if (m_attr_type == AttributeType::Date && step.isObject()) {
+        const auto& stepObj = step.toObject();
+        auto* dlayout = static_cast<QGridLayout*>(step_date->layout());
+        std::array<std::pair<QString, size_t>, 7> keys{
+            {{"days", 5}, {"seconds", 3}, {"microseconds", 0}, {"milliseconds", 1}, {"minutes", 2}, {"hours", 4}, {"weeks", 6}}
+        };
+        for (const auto& [str, index] : keys) {
+            auto* item = dlayout->itemAtPosition(index, 1);
+            auto* dateEdit = static_cast<QLineEdit*>(item->widget());
+            if (stepObj.contains(str)) {
+                dateEdit->setText(stepObj[str].toString());
+            } else {
+                dateEdit->setText("0");
+            }
+        }
+    } else if (step.isString()) {
+        this->step->setText(step.toString());
+    }
+}
+void MockAttribute::setLength(const QString& length) {
+
 }

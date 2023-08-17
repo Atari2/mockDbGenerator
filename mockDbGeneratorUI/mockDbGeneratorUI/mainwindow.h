@@ -15,7 +15,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void add_table();
+    MockTable* add_table();
     void dump_to_json();
     void generate_sql();
     void generate_csv();

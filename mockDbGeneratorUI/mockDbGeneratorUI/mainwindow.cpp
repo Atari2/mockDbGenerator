@@ -11,6 +11,7 @@
 #include <QMessageBox>
 #include <utility>
 #include <array>
+#include <algorithm>
 
 static void unpack_python_script() {
 #define RC ":/resources/"
@@ -109,7 +110,7 @@ MainWindow::MainWindow(QWidget *parent)
     layout->addWidget(dumpWidget);
 }
 
-void MainWindow::add_table() {
+MockTable* MainWindow::add_table() {
     // add table and vboxlayout
     MockTable* tbl = new MockTable{this};
     centralWidget()->layout()->addWidget(tbl);
@@ -118,6 +119,7 @@ void MainWindow::add_table() {
         tables.removeOne(tbl);
         delete tbl;
     });
+    return tbl;
 }
 
 void MainWindow::dump_to_json() {
@@ -183,8 +185,90 @@ void MainWindow::import_json() {
     }
 }
 
-void MainWindow::parse_json_table(const QJsonValue& tbl) {
-
+void MainWindow::parse_json_table(const QJsonValue& jtbl) {
+    MockTable* tbl = add_table();
+    const auto& jtableName = jtbl["name"];
+    const auto& jquantity = jtbl["rows"];
+    const auto& jattributesArray = jtbl["attributes"];
+    const auto& jprimaryKeys = jtbl["primary_keys"];
+    if (!jtableName.isString() || !jattributesArray.isArray() || !jprimaryKeys.isArray()) {
+        // error
+        return;
+    }
+    auto tableName = jtableName.toString();
+    auto rowNumber = jquantity.isDouble() ? static_cast<int>(jquantity.toDouble()) : jquantity.toString().toInt();
+    auto attributes = jattributesArray.toArray();
+    if (attributes.size() > 0) {
+        tbl->setAttributesVisible();
+    }
+    auto primaryKeys = jprimaryKeys.toArray();
+    QVector<QString> primaryKeyNames{};
+    primaryKeyNames.reserve(primaryKeys.size());
+    std::transform(primaryKeys.begin(), primaryKeys.end(), std::back_inserter(primaryKeyNames), [](const auto& jobj) {
+        if (jobj.isString()) {
+            return jobj.toString();
+        }
+        return QString{"Invalid attribute name"};
+    });
+    tbl->setName(tableName);
+    tbl->setRowNumber(rowNumber);
+    for (const auto& jattr : attributes) {
+        if (!jattr.isObject()) {
+            continue;
+        }
+        const auto& attr = jattr.toObject();
+        const auto& jattrName = attr["name"];
+        const auto& jattrType = attr["type"];
+        if (!jattrName.isString() || !jattrType.isString() )
+            continue;
+        auto attrName = jattrName.toString();
+        auto attrType = jattrType.toString().toUpper();
+        MockAttribute* wattr = tbl->add_attribute();
+        // set props
+        if (primaryKeyNames.contains(attrName)) {
+            wattr->set_pk();
+        }
+        wattr->setName(attrName);
+        if (attrType == "FOREIGN_KEY") {
+            wattr->set_fk();
+            const auto& jrefs = attr["references"];
+            if (!jrefs.isObject())
+                continue;
+            const auto& refs = jrefs.toObject();
+            wattr->setRefTable(refs["table"].toString());
+            wattr->setRefAttr(refs["attribute"].toString());
+        } else {
+            const auto& jgenType = attr["generation"];
+            if (!jgenType.isString())
+                continue;
+            auto genType = jgenType.toString().toUpper();
+            if (attrType == "INTEGER") {
+                wattr->setAttrType(MockAttribute::AttributeType::Integer);
+                wattr->setStart(attr["start"].isString() ? attr["start"].toString() : "0");
+                wattr->setStep(attr["step"]);
+            } else if (attrType == "STRING") {
+                wattr->setAttrType(MockAttribute::AttributeType::String);
+                wattr->setLength(attr["length"].toString());
+            } else if (attrType == "REAL") {
+                wattr->setAttrType(MockAttribute::AttributeType::Real);
+                wattr->setStart(attr["start"].isString() ? attr["start"].toString() : "0");
+                wattr->setStep(attr["step"]);
+            } else if (attrType == "DATE") {
+                wattr->setAttrType(MockAttribute::AttributeType::Date);
+                wattr->setStart(attr["start"].isString() ? attr["start"].toString() : "0");
+                wattr->setStep(attr["step"]);
+            }
+            if (genType == "RANDOM") {
+                wattr->setGenType(MockAttribute::GenerationType::Random);
+            } else if (genType == "INCREASING") {
+                wattr->setGenType(MockAttribute::GenerationType::Increasing);
+            } else if (genType == "DECREASING") {
+                wattr->setGenType(MockAttribute::GenerationType::Decreasing);
+            } else if (genType == "REPEATING") {
+                wattr->setGenType(MockAttribute::GenerationType::Repeating);
+            }
+        }
+    }
 }
 
 MainWindow::~MainWindow()

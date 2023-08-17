@@ -65,6 +65,16 @@ public:
     explicit MockAttribute(QString name, int row, QGridLayout* layout, QWidget *parent = nullptr);
     QJsonObject to_json() const;
     bool is_pk() const { return m_key_type == KeyType::PrimaryKey; }
+    void set_pk() { kbox->setCurrentIndex(static_cast<std::underlying_type_t<KeyType>>(KeyType::PrimaryKey)); }
+    void set_fk() { kbox->setCurrentIndex(static_cast<std::underlying_type_t<KeyType>>(KeyType::ForeignKey)); }
+    void setAttrType(AttributeType type) { tbox->setCurrentIndex(static_cast<std::underlying_type_t<AttributeType>>(type)); }
+    void setGenType(GenerationType type);
+    void setStart(const QString& start);
+    void setStep(const QJsonValue& step);
+    void setLength(const QString& length);
+    void setName(const QString& name) { m_name = name; name_edit->setText(m_name); }
+    void setRefTable(const QString& tblName) { ref_table->setText(tblName); }
+    void setRefAttr(const QString& tblAttr) { ref_attr->setText(tblAttr); }
     const QString& name() const { return m_name; }
     QPushButton* delete_btn() { return delete_button; }
 signals:
