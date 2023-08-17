@@ -19,7 +19,22 @@ static bool check_python_version() {
         QMessageBox::critical(nullptr, "Failed to parse python version", QString::fromStdString(output) + " is not a valid python version");
         return false;
     }
-    if (!(major >= 3 && minor >= 10 && bugfix >= 8)) {
+    auto lambda_check = [&](){
+        if (major < 3) {
+            return false;
+        } else if (major > 3) {
+            return true;
+        } else { // major == 3
+            if (minor < 10) {
+                return false;
+            } else if (minor > 10) {
+                return true;
+            } else { // minor == 10
+                return bugfix >= 8;
+            }
+        }
+    };
+    if (!lambda_check()) {
         QMessageBox::critical(nullptr, "Python version check failed", QString::fromStdString(output) + " is too low, minimum required is 3.10.8");
         return false;
     }
