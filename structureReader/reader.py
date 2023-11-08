@@ -247,14 +247,16 @@ class DbTable:
         sql = f"CREATE TABLE {self._name} (\n"
         for attribute in self._attributes.values():
             sql += f"\t{attribute.sql_string(SQLDialect.ORACLE)}, \n"
-        sql += f'\tCONSTRAINT pk_{self._name} PRIMARY KEY ({", ".join(map(lambda x: x._name, self._keys))})\n);\n'
+        if len(self._keys) > 0:
+            sql += f'\tCONSTRAINT pk_{self._name} PRIMARY KEY ({", ".join(map(lambda x: x._name, self._keys))})\n);\n'
         f.write(sql) # type: ignore
 
     def _generate_postgres_sql(self, f: TextIOWrapper):
         sql = f"CREATE TABLE {self._name} (\n"
         for attribute in self._attributes.values():
             sql += f"\t{attribute.sql_string(SQLDialect.POSTGRES)}, \n"
-        sql += f'\tCONSTRAINT pk_{self._name} PRIMARY KEY ({", ".join(map(lambda x: x._name, self._keys))})\n);\n'
+        if len(self._keys) > 0:
+            sql += f'\tCONSTRAINT pk_{self._name} PRIMARY KEY ({", ".join(map(lambda x: x._name, self._keys))})\n);\n'
         f.write(sql) # type: ignore
 
     def generate_sql(self, f: TextIOWrapper, dialect: SQLDialect):
