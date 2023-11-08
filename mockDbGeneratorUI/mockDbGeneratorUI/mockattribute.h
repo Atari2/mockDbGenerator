@@ -31,7 +31,11 @@ public:
         Random,
         Increasing,
         Decreasing,
-        Repeating
+        Repeating,
+        NameSurname,
+        Email,
+        Phone,
+        NaturalText
     };
     enum class KeyType {
         None,

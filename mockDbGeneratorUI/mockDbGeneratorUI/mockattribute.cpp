@@ -15,15 +15,20 @@ auto up(std::underlying_type_t<Enum> e) {
     return static_cast<Enum>(e);
 }
 
+
+static bool check_for_string_only(GT gen) {
+    return gen == GT::NameSurname || gen == GT::Email || gen == GT::Phone || gen == GT::NaturalText;
+}
+
 static bool type_gen_compatible(GT gen, AT type) {
     switch (type) {
     case AT::Integer:
     case AT::Real:
-        return true;
+        return !check_for_string_only(gen);
     case AT::String:
-        return gen == GT::Random || gen == GT::Repeating;
+        return gen == GT::Random || gen == GT::Repeating || check_for_string_only(gen);
     case AT::Date:
-        return gen != GT::Repeating;
+        return gen != GT::Repeating && !check_for_string_only(gen);
     }
     return false;
 }
@@ -35,7 +40,22 @@ static GT convert_gbox_idx_to_type(int index, AT type) {
         return up<GT>(index);
     } else {
         // string type is only valid with random and repeating
-        return index == 0 ? GT::Random : GT::Repeating;
+        switch (index) {
+        case 0:
+            return GT::Random;
+        case 1:
+            return GT::Repeating;
+        case 2:
+            return GT::NameSurname;
+        case 3:
+            return GT::Email;
+        case 4:
+            return GT::Phone;
+        case 5:
+            return GT::NaturalText;
+        default:
+            return GT::Random;
+        }
     }
 }
 
@@ -50,6 +70,8 @@ static AT convert_tbox_idx_to_type(int index, GT type) {
         // increment and decrement don't support strings.
         // which means that index 2 now maps to date
         return index == 2 ? AT::Date : up<AT>(index);
+    } else if (check_for_string_only(type)) {
+        return AT::String;
     } else {
         // Random and Repeating indexes map normally
         return up<AT>(index);
@@ -58,7 +80,22 @@ static AT convert_tbox_idx_to_type(int index, GT type) {
 
 static int correct_gbox_index(GT gen, AT type) {
     if (type == AT::String) {
-        return gen == GT::Random ? 0 : 1;
+        switch (gen) {
+            case GT::Random:
+                return 0;
+            case GT::Repeating:
+                return 1;
+            case GT::NameSurname:
+                return 2;
+            case GT::Email:
+                return 3;
+            case GT::Phone:
+                return 4;
+            case GT::NaturalText:
+                return 5;
+            default:
+                return 0;
+        }
     } else {
         return down(gen);
     }
@@ -67,6 +104,8 @@ static int correct_gbox_index(GT gen, AT type) {
 static int correct_tbox_index(GT gen, AT type) {
     if (gen == GT::Increasing || gen == GT::Decreasing) {
         return type == AT::Date ? 2 : down(type);
+    } else if (check_for_string_only(gen)) {
+        return 0;
     } else {
         return down(type);
     }
@@ -130,6 +169,15 @@ MockAttribute::MockAttribute(QString attr_name, int row, QGridLayout* hl, QWidge
         m_attr_type = val;
         if (m_attr_type == AT::String) {
             length->setEnabled(true);
+            start->setEnabled(false);
+            step->setEnabled(false);
+            if (check_for_string_only(m_gen_type) && m_gen_type != GT::NaturalText) {
+                length->setEnabled(false);
+            }
+        } else {
+            length->setEnabled(false);
+            start->setEnabled(true);
+            step->setEnabled(true);
         }
         const bool isDate = m_attr_type == AT::Date;
         start_date->setHidden(!isDate);
@@ -154,6 +202,11 @@ MockAttribute::MockAttribute(QString attr_name, int row, QGridLayout* hl, QWidge
         m_gen_type = val;
         if (!type_gen_compatible(m_gen_type, m_attr_type)) {
             m_attr_type = AT::Integer;
+        }
+        if (check_for_string_only(m_gen_type) && m_gen_type != GT::NaturalText) {
+            length->setEnabled(false);
+        } else {
+            length->setEnabled(true);
         }
         tbox->blockSignals(true);
         tbox->clear();
@@ -302,7 +355,7 @@ QJsonObject MockAttribute::to_json() const {
     } else {
        obj.insert("step", step->text());
     }
-    if (m_attr_type == AT::String) {
+    if (m_attr_type == AT::String && (!check_for_string_only(m_gen_type) || m_gen_type == GT::NaturalText)) {
         obj.insert("length", length->text());
     }
     return obj;

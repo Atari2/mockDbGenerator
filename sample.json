@@ -25,7 +25,7 @@
         {
           "name": "name",
           "type": "string",
-          "generation": "random",
+          "generation": "namesurname",
           "length": "10"
         },
         {
@@ -36,6 +36,21 @@
           "step": {
             "weeks": "4"
           }
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "generation": "email"
+        },
+        {
+          "name": "phone",
+          "type": "string",
+          "generation": "phone"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "generation": "naturaltext"
         },
         {
           "name": "fk_studenti",

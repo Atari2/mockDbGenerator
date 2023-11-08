@@ -49,6 +49,10 @@ The following generation types can be used:
 * `increment` - The value is incremented by the step value for each row (this is not valid for string types)
 * `decrement` - The value is decremented by the step value for each row (this is not valid for string types)
 * `repeating` - The values are generated and then repeated every `step` times (this is not valid for date types)
+* `namesurname` - A random name and surname is generated for each row, e.g. `John Doe` (this is only valid for string types)
+* `email` - A random email is generated for each row, with the following format: `name.surname@domain.tld` e.g. `john.doe@gmail.com` (this is only valid for string types)
+* `phone` - A random phone number (a 10 number string) is generated for each row (this is only valid for string types)
+* `naturaltext` - A random text with english words is generated for each row, the words are existing english words but they are still picked at random, no natural language algorithm is used (this is only valid for string types)
 
 The `date` type needs to be accurately specified `start` and `step` values. The `start` value must be a string in the format `YYYY-MM-DD` and the `step` value must be an object which can have the following properties:
 * `days`

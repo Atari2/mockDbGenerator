@@ -3,3 +3,4 @@ Copy-Item -Path "mockDbGenerator.py" -Destination "$resourceDir\mockDbGenerator.
 Copy-Item -Path "typeWrappers" -Destination "$resourceDir\typeWrappers" -Force -Recurse
 Copy-Item -Path "dataGenerators" -Destination "$resourceDir\dataGenerators" -Force -Recurse
 Copy-Item -Path "structureReader" -Destination "$resourceDir\structureReader" -Force -Recurse
+Copy-Item -Path "data" -Destination "$resourceDir\data" -Force -Recurse

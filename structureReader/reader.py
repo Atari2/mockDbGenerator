@@ -1,4 +1,5 @@
 from __future__ import annotations
+from enum import IntEnum
 from io import TextIOWrapper
 import json
 from typeWrappers.types import DbType
@@ -8,6 +9,10 @@ from datetime import datetime, timedelta
 from csv import DictWriter
 import os
 import random
+
+class SQLDialect(IntEnum):
+    POSTGRES = 1
+    ORACLE = 2
 
 map_str_to_type = {
     "INTEGER": DbType.INTEGER,
@@ -20,6 +25,10 @@ map_str_to_generation_type = {
     "INCREASING": GenerationMode.INCREASING,
     "DECREASING": GenerationMode.DECREASING,
     "REPEATING": GenerationMode.REPEATING,
+    "NAMESURNAME": GenerationMode.NAMESURNAME,
+    "EMAIL": GenerationMode.EMAIL,
+    "PHONE": GenerationMode.PHONE,
+    "NATURALTEXT": GenerationMode.NATURALTEXT,
 }
 
 
@@ -41,14 +50,25 @@ def construct_timedelta(object: dict[str, str]):
     return timedelta(*values)
 
 
-def make_sql_type_from_type(type: DbType, length: int):
-    match type:
-        case DbType.INTEGER | DbType.REAL:
-            return "NUMBER"
-        case DbType.STRING:
-            return f"VARCHAR2({length})"
-        case DbType.DATE:
-            return "TIMESTAMP"
+def make_sql_type_from_type(type: DbType, length: int, dialect: SQLDialect):
+    if dialect == SQLDialect.POSTGRES:
+        match type:
+            case DbType.INTEGER:
+                return "INTEGER"
+            case DbType.REAL:
+                return "REAL"
+            case DbType.STRING:
+                return f"VARCHAR({length})"
+            case DbType.DATE:
+                return "DATE"
+    elif dialect == SQLDialect.ORACLE:
+        match type:
+            case DbType.INTEGER | DbType.REAL:
+                return "NUMBER"
+            case DbType.STRING:
+                return f"VARCHAR2({length})"
+            case DbType.DATE:
+                return "TIMESTAMP"
 
 
 map_starting_to_cast = {
@@ -156,9 +176,20 @@ class DbAttribute:
     @property
     def data(self):
         return self._data
+    
+    def _update_length_if_needed(self):
+        GENMOD_TO_ADJUST = [GenerationMode.NATURALTEXT, GenerationMode.NAMESURNAME, GenerationMode.EMAIL, GenerationMode.PHONE]
+        if self._data is None:
+            raise ValueError("Attribute data is None, cannot update length")
+        if not hasattr(self, "_generation"):
+            return
+        if self.type == DbType.STRING and self._generation in GENMOD_TO_ADJUST:
+            self._length = max(map(len, self._data))
+        else:
+            return
 
-    def sql_string(self) -> str:
-        return f"{self._name} {make_sql_type_from_type(self.type, self.length if self.length else 0)} NOT NULL"
+    def sql_string(self, dialect: SQLDialect) -> str:
+        return f"{self._name} {make_sql_type_from_type(self.type, self.length if self.length else 0, dialect)} NOT NULL"
 
 
 class ForeignKey:
@@ -211,15 +242,30 @@ class DbTable:
 
     def __hash__(self):
         return hash(self._name)
-
-    def generate_sql(self, f: TextIOWrapper):
+    
+    def _generate_oracle_sql(self, f: TextIOWrapper):
         sql = f"CREATE TABLE {self._name} (\n"
         for attribute in self._attributes.values():
-            sql += f"\t{attribute.sql_string()}, \n"
+            sql += f"\t{attribute.sql_string(SQLDialect.ORACLE)}, \n"
         sql += f'\tCONSTRAINT pk_{self._name} PRIMARY KEY ({", ".join(map(lambda x: x._name, self._keys))})\n);\n'
         f.write(sql) # type: ignore
 
-    def generate_insertion_sql(self, f: TextIOWrapper):
+    def _generate_postgres_sql(self, f: TextIOWrapper):
+        sql = f"CREATE TABLE {self._name} (\n"
+        for attribute in self._attributes.values():
+            sql += f"\t{attribute.sql_string(SQLDialect.POSTGRES)}, \n"
+        sql += f'\tCONSTRAINT pk_{self._name} PRIMARY KEY ({", ".join(map(lambda x: x._name, self._keys))})\n);\n'
+        f.write(sql) # type: ignore
+
+    def generate_sql(self, f: TextIOWrapper, dialect: SQLDialect):
+        if dialect == SQLDialect.POSTGRES:
+            self._generate_postgres_sql(f)
+        elif dialect == SQLDialect.ORACLE:
+            self._generate_oracle_sql(f)
+        else:
+            raise ValueError(f"Invalid dialect {dialect}")
+
+    def generate_insertion_sql(self, f: TextIOWrapper, dialect: SQLDialect):
         for i in range(self._quantity):
             sql = f'INSERT INTO {self._name}({", ".join(self._attributes)}) VALUES ('
             for attribute in self._attributes.values():
@@ -228,9 +274,14 @@ class DbTable:
                 if attribute.type == DbType.STRING:
                     attribute_str = f"'{attribute.data[i]}'"
                 elif attribute.type == DbType.DATE:
-                    attribute_str = (
-                        f"TO_TIMESTAMP('{attribute.data[i]}', 'YYYY-MM-DD HH24:MI:SS')"
-                    )
+                    if dialect == SQLDialect.POSTGRES:
+                        attribute_str = f"'{attribute.data[i]}'"
+                    elif dialect == SQLDialect.ORACLE:
+                        attribute_str = (
+                            f"TO_TIMESTAMP('{attribute.data[i]}', 'YYYY-MM-DD HH24:MI:SS')"
+                        )
+                    else:
+                        raise ValueError(f"Invalid dialect {dialect}")
                 else:
                     attribute_str = str(attribute.data[i])
                 sql += f"{attribute_str}, "
@@ -289,6 +340,7 @@ class DbTable:
     def generate_data(self, directory: str):
         for attribute in self._attributes.values():
             attribute._data = self._generate_single_attr_data(attribute)
+            attribute._update_length_if_needed()
 
 
 class DbSchema:
@@ -323,12 +375,38 @@ class DbSchema:
         for table in self._tables:
             table.write_to_csv(self._name)
 
-    def generate_sql(self):
+    def _gen_oracle_foreign_key(self, table: DbTable, foreign_key: DbAttribute, attr: DbAttribute) -> str:
+        return f"ALTER TABLE {table._name} ADD CONSTRAINT FOREIGN KEY fk_{table._name} ({foreign_key._name}) REFERENCES {foreign_key._references.table._name}({attr._name});\n" # type: ignore
+
+    def _gen_postgres_foreign_key(self, table: DbTable, foreign_key: DbAttribute, attr: DbAttribute) -> str:
+        return f"ALTER TABLE {table._name} ADD CONSTRAINT fk_{table._name} FOREIGN KEY ({foreign_key._name}) REFERENCES {foreign_key._references.table._name}({attr._name}) ON UPDATE NO ACTION ON DELETE NO ACTION;\n" # type: ignore
+
+    def _gen_foreign_key(self, table: DbTable, foreign_key: DbAttribute, attr: DbAttribute, dialect: SQLDialect) -> str:
+        if dialect == SQLDialect.POSTGRES:
+            return self._gen_postgres_foreign_key(table, foreign_key, attr)
+        elif dialect == SQLDialect.ORACLE:
+            return self._gen_oracle_foreign_key(table, foreign_key, attr)
+        else:
+            raise ValueError(f"Invalid dialect {dialect}")
+
+    def generate_sql(self, dialect: str = "postgres"):
+        dialect_mapping = {
+            "postgres": SQLDialect.POSTGRES,
+            "oracle": SQLDialect.ORACLE,
+        }
+        if dialect not in dialect_mapping:
+            raise ValueError(f"Invalid dialect {dialect}")
+        sql_dialect = dialect_mapping[dialect]
         with open(f"{self._name}.sql", "w") as f:
             for table in self._tables:
-                f.write(f"DROP TABLE {table._name} CASCADE CONSTRAINTS;\n")
+                if sql_dialect == SQLDialect.POSTGRES:
+                    f.write(f"DROP TABLE IF EXISTS {table._name} CASCADE;\n") 
+                elif sql_dialect == SQLDialect.ORACLE:
+                    f.write(f"DROP TABLE {table._name} CASCADE CONSTRAINTS;\n")
+                else:
+                    raise ValueError(f"Invalid dialect {dialect}")
             for table in self._tables:
-                table.generate_sql(f)
+                table.generate_sql(f, dialect=sql_dialect)
             for table in self._tables:
                 for foreign_key in filter(
                     lambda x: x._references, table._attributes.values()
@@ -341,10 +419,10 @@ class DbSchema:
                     if isinstance(foreign_key._references.table, str):
                         raise ValueError("Foreign key references table is string")
                     f.write(
-                        f"ALTER TABLE {table._name} ADD CONSTRAINT FOREIGN KEY fk_{table._name} ({foreign_key._name}) REFERENCES {foreign_key._references.table._name}({attr._name});\n"
+                        self._gen_foreign_key(table, foreign_key, attr, sql_dialect)
                     )
             for table in self._tables:
-                table.generate_insertion_sql(f)
+                table.generate_insertion_sql(f, dialect=sql_dialect)
 
 
 class InvalidSchema(Exception):

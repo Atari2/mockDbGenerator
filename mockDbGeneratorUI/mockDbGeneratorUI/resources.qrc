@@ -8,5 +8,9 @@
         <file>resources/typeWrappers/__init__.py</file>
         <file>resources/typeWrappers/types.py</file>
         <file>resources/mockDbGenerator.py</file>
+        <file>resources/data/female-names-list.txt</file>
+        <file>resources/data/male-names-list.txt</file>
+        <file>resources/data/surnames-list.txt</file>
+        <file>resources/data/words.txt</file>
     </qresource>
 </RCC>

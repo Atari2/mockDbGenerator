@@ -19,6 +19,7 @@ static void unpack_python_script() {
 #define DG "dataGenerators/"
 #define SR "structureReader/"
 #define TW "typeWrappers/"
+#define DT "data/"
 #define MAKE_RC(name, fold) std::pair{QString{RC fold name}, QString{fold name}}
     std::array names{
         MAKE_RC("mockDbGenerator.py", BASE),
@@ -27,18 +28,24 @@ static void unpack_python_script() {
         MAKE_RC("__init__.py", TW),
         MAKE_RC("generators.py", DG),
         MAKE_RC("reader.py", SR),
-        MAKE_RC("types.py", TW)
+        MAKE_RC("types.py", TW),
+        MAKE_RC("female-names-list.txt", DT),
+        MAKE_RC("male-names-list.txt", DT),
+        MAKE_RC("surnames-list.txt", DT),
+        MAKE_RC("words.txt", DT)
     };
     std::array directories{
         "dataGenerators",
         "structureReader",
-        "typeWrappers"
+        "typeWrappers",
+        "data"
     };
 #undef RC
 #undef BASE
 #undef DG
 #undef SR
 #undef TW
+#undef DT
 #undef MAKE_RC
     QDir d;
     for (const auto& dir : directories) {
@@ -150,17 +157,62 @@ void MainWindow::generate_csv() {
     };
     QMessageBox::information(this, "Command result", proc.readAllStandardOutput());
 }
+
+enum class SQLDialect {
+    Oracle,
+    Postgres
+};
+
 void MainWindow::generate_sql() {
+    QVector<QString> valid_dialects {
+        "Oracle", "PostgreSQL"
+    };
     dump_to_json();
-    QProcess proc{};
-    QStringList args;
-    args << "mockDbGenerator.py" << "--file" << (m_schema_name->text() + ".json");
-    args << "--sql";
-    proc.start("py", args);
-    if (!proc.waitForFinished()) {
-        qDebug() << "Process failed";
+    QDialog* dialog = new QDialog{this};
+    QObject::connect(dialog, &QDialog::finished, this, [this](int d) {
+        SQLDialect dl = static_cast<SQLDialect>(d);
+        QProcess proc{};
+        QStringList args;
+        args << "mockDbGenerator.py" << "--file" << (m_schema_name->text() + ".json");
+        args << "--sql";
+        if (dl == SQLDialect::Oracle) {
+            args << "--dialect" << "oracle";
+        } else {
+            args << "--dialect" << "postgres";
+        }
+        proc.start("py", args);
+        if (!proc.waitForFinished()) {
+            qDebug() << "Process failed";
+        }
+        auto error = proc.readAllStandardError();
+        auto output = proc.readAllStandardOutput();
+        if (error.length() > 0) {
+            QMessageBox::information(this, "Command exited with text on stderr", "STDERR: " + error + "\nSTDOUT: " + output);
+        } else {
+            QMessageBox::information(this, "Command result", output);
+        }
+    });
+    dialog->setWindowTitle("Choose dialect");
+    QVBoxLayout* dialog_layout = new QVBoxLayout;
+    QVBoxLayout* central_widget_layout = new QVBoxLayout;
+    QWidget* central_widget = new QWidget{};
+    central_widget->setLayout(central_widget_layout);
+    dialog_layout->addWidget(central_widget);
+    dialog->setLayout(dialog_layout);
+    for (const auto& dialect : valid_dialects) {
+        QPushButton* btn = new QPushButton{dialect, central_widget};
+        QObject::connect(btn, &QPushButton::pressed, this, [dialect, dialog](){
+            if (dialect == "Oracle") {
+                dialog->done(static_cast<int>(SQLDialect::Oracle));
+            } else {
+                dialog->done(static_cast<int>(SQLDialect::Postgres));
+            }
+        });
+        central_widget->layout()->addWidget(btn);
     }
-    QMessageBox::information(this, "Command result", proc.readAllStandardOutput());
+    dialog->open();
+
+
 }
 void MainWindow::import_json() {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"),
@@ -266,6 +318,14 @@ void MainWindow::parse_json_table(const QJsonValue& jtbl) {
                 wattr->setGenType(MockAttribute::GenerationType::Decreasing);
             } else if (genType == "REPEATING") {
                 wattr->setGenType(MockAttribute::GenerationType::Repeating);
+            } else if (genType == "NAMESURNAME") {
+                wattr->setGenType(MockAttribute::GenerationType::NameSurname);
+            } else if (genType == "EMAIL") {
+                wattr->setGenType(MockAttribute::GenerationType::Email);
+            } else if (genType == "PHONE") {
+                wattr->setGenType(MockAttribute::GenerationType::Phone);
+            } else if (genType == "NATURALTEXT") {
+                wattr->setGenType(MockAttribute::GenerationType::NaturalText);
             }
         }
     }
