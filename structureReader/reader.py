@@ -249,6 +249,8 @@ class DbTable:
             sql += f"\t{attribute.sql_string(SQLDialect.ORACLE)}, \n"
         if len(self._keys) > 0:
             sql += f'\tCONSTRAINT pk_{self._name} PRIMARY KEY ({", ".join(map(lambda x: x._name, self._keys))})\n);\n'
+        else:
+            sql = sql[:-3] + "\n);\n"
         f.write(sql) # type: ignore
 
     def _generate_postgres_sql(self, f: TextIOWrapper):
@@ -257,6 +259,8 @@ class DbTable:
             sql += f"\t{attribute.sql_string(SQLDialect.POSTGRES)}, \n"
         if len(self._keys) > 0:
             sql += f'\tCONSTRAINT pk_{self._name} PRIMARY KEY ({", ".join(map(lambda x: x._name, self._keys))})\n);\n'
+        else:
+            sql = sql[:-3] + "\n);\n"
         f.write(sql) # type: ignore
 
     def generate_sql(self, f: TextIOWrapper, dialect: SQLDialect):
